@@ -21,7 +21,7 @@ export default function Navbar({ activeTab = 'workspace', onTabChange = () => {}
           </div>
 
           {/* Nav Tabs */}
-          <nav className="hidden md:flex items-center gap-1 p-1 rounded-full bg-surface-container-low border border-surface-container-high/60">
+          <nav className="hidden md:flex absolute left-1/2 -translate-x-1/2 items-center justify-center gap-1 p-1 rounded-full bg-surface-container-low border border-surface-container-high/60">
             <button
               onClick={() => onTabChange('workspace')}
               className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all ${

@@ -81,7 +81,7 @@ export default function UploadImage({ onImageSelected, currentImage }) {
 
       {currentImage ? (
         <div className="relative rounded-xl border border-surface-container-high bg-white p-3 shadow-inner">
-          <div className="relative w-full h-[180px] rounded-lg overflow-hidden bg-surface-container-low flex items-center justify-center">
+          <div className="relative w-full h-[170px] rounded-lg overflow-hidden bg-surface-container-low flex items-center justify-center">
             <img
               src={currentImage.dataUrl}
               alt="Uploaded concept"
@@ -124,22 +124,22 @@ export default function UploadImage({ onImageSelected, currentImage }) {
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
           onClick={() => fileInputRef.current?.click()}
-          className={`p-6 rounded-xl border-2 border-dashed transition-all cursor-pointer flex flex-col items-center justify-center text-center ${
+          className={`py-5 px-4 rounded-xl border-2 border-dashed transition-all cursor-pointer flex flex-col items-center justify-center text-center ${
             isDragOver
               ? 'border-primary bg-primary-light/40 scale-[1.01]'
               : 'border-outline-variant/60 bg-surface-container-low/70 hover:bg-surface-container-low hover:border-primary/50'
           }`}
         >
-          <div className="w-12 h-12 rounded-full bg-primary-fixed flex items-center justify-center text-primary mb-2 shadow-xs">
-            <UploadCloud className="w-6 h-6" />
+          <div className="w-10 h-10 rounded-full bg-primary-fixed flex items-center justify-center text-primary mb-2 shadow-xs">
+            <UploadCloud className="w-5 h-5" />
           </div>
           <p className="font-semibold text-xs text-main-text">
             Drop PNG/JPG sketch here
           </p>
-          <p className="text-xs text-on-surface-variant mt-0.5">
+          <p className="text-[11px] text-on-surface-variant mt-0.5">
             or browse your system files
           </p>
-          <span className="mt-2 font-mono text-[10px] text-outline">
+          <span className="mt-1.5 font-mono text-[10px] text-outline">
             Supports PNG, JPG, WebP • Transparent BG preferred
           </span>
         </div>

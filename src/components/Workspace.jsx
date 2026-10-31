@@ -160,58 +160,58 @@ export default function Workspace() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
         {/* ================= LEFT COLUMN: SKETCH INPUT ================= */}
         <section className="lg:col-span-3 xl:col-span-3 flex flex-col h-full">
-          <div className="bg-white p-4 rounded-xl border border-surface-container-high shadow-card flex flex-col justify-between h-full gap-4">
-            <div className="flex flex-col gap-4">
-              {/* Heading */}
-              <div>
-                <div className="flex items-center justify-between">
-                  <h2 className="font-manrope text-base font-bold text-main-text">
-                    Create Your 3D Model
-                  </h2>
-                  <span className="px-2 py-0.5 rounded-full bg-primary-light text-primary font-mono text-[10px] font-semibold uppercase tracking-wider border border-primary/20">
-                    v2.1
-                  </span>
-                </div>
-                <p className="text-xs text-on-surface-variant mt-0.5">
-                  Transform hand-drawn sketches or images into textured 3D assets
-                </p>
+          <div className="bg-white p-4 rounded-xl border border-surface-container-high shadow-card flex flex-col h-full">
+            {/* Heading */}
+            <div>
+              <div className="flex items-center justify-between">
+                <h2 className="font-manrope text-base font-bold text-main-text">
+                  Create Your 3D Model
+                </h2>
+                <span className="px-2 py-0.5 rounded-full bg-primary-light text-primary font-mono text-[10px] font-semibold uppercase tracking-wider border border-primary/20">
+                  v2.1
+                </span>
               </div>
+              <p className="text-xs text-on-surface-variant mt-0.5">
+                Transform hand-drawn sketches or images into textured 3D assets
+              </p>
+            </div>
 
-              {/* Segmented Tab Toggle */}
-              <div className="grid grid-cols-2 p-1 rounded-lg bg-surface-container-low border border-surface-container-high/60 gap-1">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setInputMode('draw')
-                    setValidationError(null)
-                  }}
-                  className={`py-1.5 text-center text-xs rounded-md font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                    inputMode === 'draw'
-                      ? 'bg-white text-main-text shadow-sm ring-1 ring-black/5'
-                      : 'text-on-surface-variant hover:text-main-text'
-                  }`}
-                >
-                  <Pencil className="w-3.5 h-3.5 text-primary" />
-                  <span>Draw Sketch</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setInputMode('upload')
-                    setValidationError(null)
-                  }}
-                  className={`py-1.5 text-center text-xs rounded-md font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                    inputMode === 'upload'
-                      ? 'bg-white text-main-text shadow-sm ring-1 ring-black/5'
-                      : 'text-on-surface-variant hover:text-main-text'
-                  }`}
-                >
-                  <UploadCloud className="w-3.5 h-3.5 text-primary" />
-                  <span>Upload Image</span>
-                </button>
-              </div>
+            {/* Segmented Tab Toggle */}
+            <div className="grid grid-cols-2 p-1 rounded-lg bg-surface-container-low border border-surface-container-high/60 gap-1 mt-3.5">
+              <button
+                type="button"
+                onClick={() => {
+                  setInputMode('draw')
+                  setValidationError(null)
+                }}
+                className={`py-1.5 text-center text-xs rounded-md font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                  inputMode === 'draw'
+                    ? 'bg-white text-main-text shadow-sm ring-1 ring-black/5'
+                    : 'text-on-surface-variant hover:text-main-text'
+                }`}
+              >
+                <Pencil className="w-3.5 h-3.5 text-primary" />
+                <span>Draw Sketch</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setInputMode('upload')
+                  setValidationError(null)
+                }}
+                className={`py-1.5 text-center text-xs rounded-md font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                  inputMode === 'upload'
+                    ? 'bg-white text-main-text shadow-sm ring-1 ring-black/5'
+                    : 'text-on-surface-variant hover:text-main-text'
+                }`}
+              >
+                <UploadCloud className="w-3.5 h-3.5 text-primary" />
+                <span>Upload Image</span>
+              </button>
+            </div>
 
-              {/* Active Input Tool: Canvas or Upload */}
+            {/* Active Input Tool: Canvas or Upload (natural height, no extra flex-grow) */}
+            <div className="mt-3.5">
               {inputMode === 'draw' ? (
                 <SketchCanvas onSketchChange={handleSketchChange} />
               ) : (
@@ -222,8 +222,8 @@ export default function Workspace() {
               )}
             </div>
 
-            {/* Prompt Input & Generate Button */}
-            <div className="pt-2 border-t border-surface-container-low">
+            {/* Prompt Input & Generate Button - positioned immediately below upload area with ~20-24px spacing */}
+            <div className="mt-5 pt-3 border-t border-surface-container-low">
               <PromptInput
                 prompt={prompt}
                 onPromptChange={(newPrompt) => {
