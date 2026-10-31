@@ -16,9 +16,7 @@ export default function Navbar({ activeTab = 'workspace', onTabChange = () => {}
               <span className="font-manrope text-lg font-bold tracking-tight text-main-text">
                 Sketch2Shape
               </span>
-              <span className="px-2 py-0.5 rounded-full bg-surface-container text-primary font-mono text-[11px] font-semibold">
-                AI Studio
-              </span>
+              
             </div>
           </div>
 
@@ -60,21 +58,10 @@ export default function Navbar({ activeTab = 'workspace', onTabChange = () => {}
 
         {/* Right: Engine Status & Profile */}
         <div className="flex items-center gap-3 sm:gap-4">
-          <div className="hidden sm:flex items-center gap-2 px-3 py-1 rounded-full bg-secondary-light/70 border border-secondary/20 text-secondary">
-            <span className="w-2 h-2 rounded-full bg-secondary animate-pulse" />
-            <span className="font-mono text-xs font-semibold text-secondary-on-container">
-              Studio Engine Ready
-            </span>
-          </div>
+          
 
           <div className="flex items-center gap-2">
-            <button
-              className="w-8 h-8 rounded-full bg-surface-container-low hover:bg-surface-container flex items-center justify-center text-on-surface-variant transition-colors"
-              title="Help & Documentation"
-              type="button"
-            >
-              <HelpCircle className="w-4 h-4" />
-            </button>
+            
             <div
               className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white cursor-pointer shadow-sm hover:opacity-90 transition-opacity"
               title="User Account"

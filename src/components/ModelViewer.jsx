@@ -131,16 +131,22 @@ export default function ModelViewer({
     window.addEventListener('pointermove', onPointerMove)
     domElement.addEventListener('wheel', onWheel, { passive: false })
 
-    // 8. Resize Listener
+    // 8. Resize Listener & Observer
     const handleResize = () => {
       if (!container || !cameraRef.current || !rendererRef.current) return
       const w = container.clientWidth
       const h = container.clientHeight
+      if (w === 0 || h === 0) return
       cameraRef.current.aspect = w / h
       cameraRef.current.updateProjectionMatrix()
       rendererRef.current.setSize(w, h)
     }
     window.addEventListener('resize', handleResize)
+
+    const resizeObserver = new ResizeObserver(() => {
+      handleResize()
+    })
+    resizeObserver.observe(container)
 
     // 9. Animation Loop
     const clock = new THREE.Clock()
@@ -166,6 +172,7 @@ export default function ModelViewer({
     return () => {
       cancelAnimationFrame(reqIdRef.current)
       window.removeEventListener('resize', handleResize)
+      resizeObserver.disconnect()
       window.removeEventListener('pointerup', onPointerUp)
       window.removeEventListener('pointermove', onPointerMove)
       domElement.removeEventListener('pointerdown', onPointerDown)
@@ -337,9 +344,9 @@ export default function ModelViewer({
   const displayPolys = loadedStats?.polys || null
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col h-full">
       {/* Viewport Card */}
-      <div className="bg-white p-4 rounded-xl border border-surface-container-high shadow-card flex flex-col gap-3">
+      <div className="bg-white p-4 rounded-xl border border-surface-container-high shadow-card flex flex-col gap-3 h-full">
         {/* Top Control Bar */}
         <div className="flex flex-wrap items-center justify-between gap-3 pb-1 border-b border-surface-container-low">
           {/* Asset Title & Meta */}
@@ -429,7 +436,7 @@ export default function ModelViewer({
         </div>
 
         {/* Main 3D Dark Canvas Viewport */}
-        <div className="relative w-full h-[520px] lg:h-[580px] xl:h-[620px] rounded-2xl overflow-hidden bg-viewport shadow-2xl select-none">
+        <div className="relative w-full flex-1 min-h-[520px] lg:min-h-[580px] rounded-2xl overflow-hidden bg-viewport shadow-2xl select-none">
           {/* Three.js Canvas Container */}
           <div ref={containerRef} className="w-full h-full cursor-grab active:cursor-grabbing" />
 

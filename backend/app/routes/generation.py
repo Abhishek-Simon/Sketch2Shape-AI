@@ -1,7 +1,10 @@
+import io
 import json
 import uuid
+import zipfile
 from typing import Optional
 
+import trimesh
 from fastapi import (
     APIRouter,
     UploadFile,
@@ -11,7 +14,7 @@ from fastapi import (
     HTTPException,
     status,
 )
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 
 from app.schemas.generation import (
     GenerateResponse,
@@ -183,4 +186,113 @@ async def get_model(job_id: str):
         media_type=media_type,
         filename=f"model_{job_id}{model_path.suffix}",
     )
+
+
+@router.get(
+    "/export/{job_id}",
+    summary="Export generated 3D model in multiple formats",
+    description="Converts and exports the generated 3D model into GLB, GLTF, OBJ, STL, or PLY format.",
+    responses={
+        200: {"description": "Exported model file or bundle"},
+        404: {"model": ErrorResponse, "description": "Model not ready or job not found"},
+    },
+)
+async def export_model(job_id: str, format: str = "glb"):
+    """
+    Export the generated 3D model asset in one of the supported formats:
+    glb, gltf, obj, stl, ply.
+    """
+    job = generation_service.get_job(job_id)
+    if not job:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Generation job '{job_id}' not found.",
+        )
+
+    model_path = generation_service.get_model_file(job_id)
+    if not model_path or not model_path.is_file():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"3D model asset for job '{job_id}' is not ready yet.",
+        )
+
+    fmt = format.lower().strip()
+    if fmt == "glb":
+        return FileResponse(
+            path=str(model_path),
+            media_type="model/gltf-binary",
+            filename=f"model_{job_id}.glb",
+        )
+
+    try:
+        scene_or_mesh = trimesh.load(str(model_path))
+
+        if fmt == "stl":
+            data = scene_or_mesh.export(file_type="stl")
+            content_bytes = data if isinstance(data, bytes) else data.encode("utf-8")
+            return Response(
+                content=content_bytes,
+                media_type="model/stl",
+                headers={"Content-Disposition": f'attachment; filename="model_{job_id}.stl"'},
+            )
+        elif fmt == "ply":
+            data = scene_or_mesh.export(file_type="ply")
+            content_bytes = data if isinstance(data, bytes) else data.encode("utf-8")
+            return Response(
+                content=content_bytes,
+                media_type="application/octet-stream",
+                headers={"Content-Disposition": f'attachment; filename="model_{job_id}.ply"'},
+            )
+        elif fmt == "obj":
+            exported = scene_or_mesh.export(file_type="obj")
+            buf = io.BytesIO()
+            with zipfile.ZipFile(buf, "w", compression=zipfile.ZIP_DEFLATED) as z:
+                if isinstance(exported, dict):
+                    for fname, content in exported.items():
+                        c_bytes = content if isinstance(content, bytes) else content.encode("utf-8")
+                        z.writestr(fname, c_bytes)
+                else:
+                    obj_str = exported if isinstance(exported, str) else exported.decode("utf-8")
+                    z.writestr(f"model_{job_id}.obj", obj_str)
+                    z.writestr(
+                        f"model_{job_id}.mtl",
+                        "# Wavefront Material File\nnewmtl material_0\nKa 0.2 0.2 0.2\nKd 0.8 0.8 0.8\nKs 0.2 0.2 0.2\nNs 20\nd 1.0\nillum 2\n",
+                    )
+            buf.seek(0)
+            return Response(
+                content=buf.getvalue(),
+                media_type="application/zip",
+                headers={"Content-Disposition": f'attachment; filename="model_{job_id}_obj.zip"'},
+            )
+        elif fmt == "gltf":
+            exported = scene_or_mesh.export(file_type="gltf")
+            if isinstance(exported, dict):
+                buf = io.BytesIO()
+                with zipfile.ZipFile(buf, "w", compression=zipfile.ZIP_DEFLATED) as z:
+                    for fname, content in exported.items():
+                        c_bytes = content if isinstance(content, bytes) else content.encode("utf-8")
+                        z.writestr(fname, c_bytes)
+                buf.seek(0)
+                return Response(
+                    content=buf.getvalue(),
+                    media_type="application/zip",
+                    headers={"Content-Disposition": f'attachment; filename="model_{job_id}_gltf.zip"'},
+                )
+            else:
+                c_bytes = exported if isinstance(exported, bytes) else exported.encode("utf-8")
+                return Response(
+                    content=c_bytes,
+                    media_type="model/gltf+json",
+                    headers={"Content-Disposition": f'attachment; filename="model_{job_id}.gltf"'},
+                )
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Unsupported format '{format}'. Supported formats: glb, gltf, obj, stl, ply.",
+            )
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Model conversion to {format} failed: {exc}",
+        )
 

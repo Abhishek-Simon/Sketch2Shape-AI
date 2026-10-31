@@ -1,49 +1,87 @@
 import React, { useState } from 'react'
-import { Download, FolderArchive, Smartphone, ExternalLink, Copy, Check, Lock } from 'lucide-react'
+import {
+  Download,
+  FolderArchive,
+  Smartphone,
+  ExternalLink,
+  Copy,
+  Check,
+  Loader2,
+  Printer,
+  FileCode,
+  Box,
+  Layers,
+  AlertCircle
+} from 'lucide-react'
+import { export3DModel } from '../services/exporter'
+
+const EXPORT_FORMATS = [
+  {
+    id: 'gltf',
+    label: 'GLTF (.gltf)',
+    desc: 'Web / Embedded ZIP',
+    icon: FileCode,
+    badge: 'glTF + Bin',
+  },
+  {
+    id: 'obj',
+    label: 'OBJ (.obj + .mtl)',
+    desc: 'Blender / Maya ZIP',
+    icon: FolderArchive,
+    badge: 'Wavefront',
+  },
+  {
+    id: 'stl',
+    label: 'STL (.stl)',
+    desc: '3D Printing CAD',
+    icon: Printer,
+    badge: 'Slicers',
+  },
+  {
+    id: 'ply',
+    label: 'PLY (.ply)',
+    desc: 'Mesh / Polygon',
+    icon: Layers,
+    badge: 'Stanford',
+  },
+  {
+    id: 'usdz',
+    label: 'USDZ (.usdz)',
+    desc: 'Apple Vision / iOS AR',
+    icon: Smartphone,
+    badge: 'QuickLook',
+  },
+]
 
 export default function ExportPanel({
   isModelAvailable = false,
   modelUrl = null,
-  objUrl = null,
+  jobId = null,
   modelName = 'sketch2shape_model'
 }) {
   const [copied, setCopied] = useState(false)
-  const [downloadingFormat, setDownloadingFormat] = useState(null)
+  const [exportingFormat, setExportingFormat] = useState(null)
+  const [exportError, setExportError] = useState(null)
 
-  const isGlbAvailable = Boolean(isModelAvailable && modelUrl)
-  const isObjAvailable = Boolean(objUrl)
+  const isAvailable = Boolean(isModelAvailable && modelUrl)
 
-  const handleDownload = async (format) => {
-    if (format === 'glb') {
-      if (!isGlbAvailable) return
-      setDownloadingFormat('glb')
-      try {
-        const link = document.createElement('a')
-        link.href = modelUrl
-        link.download = `${modelName}.glb`
-        document.body.appendChild(link)
-        link.click()
-        document.body.removeChild(link)
-      } catch (err) {
-        console.error('GLB download error:', err)
-      } finally {
-        setTimeout(() => setDownloadingFormat(null), 600)
-      }
-    } else if (format === 'obj') {
-      if (!isObjAvailable) return
-      setDownloadingFormat('obj')
-      try {
-        const link = document.createElement('a')
-        link.href = objUrl
-        link.download = `${modelName}.obj`
-        document.body.appendChild(link)
-        link.click()
-        document.body.removeChild(link)
-      } catch (err) {
-        console.error('OBJ download error:', err)
-      } finally {
-        setTimeout(() => setDownloadingFormat(null), 600)
-      }
+  const handleExport = async (format) => {
+    if (!isAvailable || exportingFormat) return
+    setExportingFormat(format)
+    setExportError(null)
+
+    try {
+      await export3DModel({
+        format,
+        jobId,
+        modelUrl,
+        modelName,
+      })
+    } catch (err) {
+      console.error(`Export failed for format ${format}:`, err)
+      setExportError(err.message || `Failed to export as .${format}`)
+    } finally {
+      setExportingFormat(null)
     }
   }
 
@@ -56,117 +94,149 @@ export default function ExportPanel({
   }
 
   return (
-    <div className="bg-white p-4 rounded-xl border border-surface-container-high shadow-card flex flex-col gap-3">
-      {/* Header */}
-      <div className="flex items-center justify-between pb-1 border-b border-surface-container-low">
-        <h3 className="font-manrope text-xs font-bold text-main-text">
-          Download & Export
-        </h3>
-        <span className="font-mono text-[10px] text-outline">
-          {isGlbAvailable ? 'Asset Ready' : 'Pending Model'}
+    <div className="bg-white p-4 rounded-xl border border-surface-container-high shadow-card flex flex-col gap-3.5 flex-1 justify-between">
+      {/* 1. Header */}
+      <div className="flex items-center justify-between pb-2 border-b border-surface-container-low">
+        <div className="flex items-center gap-2">
+          <div className="w-6 h-6 rounded-md bg-primary-light flex items-center justify-center text-primary">
+            <Download className="w-3.5 h-3.5" />
+          </div>
+          <h3 className="font-manrope text-xs font-bold text-main-text">
+            Download & Export
+          </h3>
+        </div>
+        <span
+          className={`font-mono text-[10px] font-semibold px-2 py-0.5 rounded-full border ${
+            isAvailable
+              ? 'bg-secondary-light text-secondary border-secondary/20'
+              : 'bg-surface-container text-on-surface-variant/70 border-surface-container-high'
+          }`}
+        >
+          {isAvailable ? 'All Formats Ready' : 'Pending Model'}
         </span>
       </div>
 
-      {/* Download Controls */}
+      {/* 2. Primary Featured GLB Download Button */}
       <div className="flex flex-col gap-2">
-        {/* GLB (Recommended) - Enabled only when real model URL exists */}
         <button
           type="button"
-          disabled={!isGlbAvailable}
-          onClick={() => handleDownload('glb')}
+          disabled={!isAvailable || exportingFormat === 'glb'}
+          onClick={() => handleExport('glb')}
           className={`w-full py-2.5 px-3 rounded-xl font-semibold text-xs flex items-center justify-between shadow-sm transition-all select-none ${
-            isGlbAvailable
-              ? 'bg-primary hover:bg-primary-hover text-white active:scale-[0.99] cursor-pointer'
-              : 'bg-surface-container-high/60 text-on-surface-variant/50 cursor-not-allowed shadow-none'
+            isAvailable
+              ? 'bg-primary hover:bg-primary-hover active:bg-primary-active text-white active:scale-[0.99] cursor-pointer shadow-primary/20'
+              : 'bg-surface-container text-on-surface-variant/40 cursor-not-allowed shadow-none'
           }`}
-          title={isGlbAvailable ? 'Download GLB format' : 'Disabled until a real 3D model is generated'}
+          title={isAvailable ? 'Download primary GLB asset' : 'Generate a model first to unlock exports'}
         >
-          <div className="flex items-center gap-2">
-            {isGlbAvailable ? (
-              <Download className="w-4 h-4" />
+          <div className="flex items-center gap-2.5">
+            {exportingFormat === 'glb' ? (
+              <Loader2 className="w-4 h-4 animate-spin text-white" />
             ) : (
-              <Lock className="w-3.5 h-3.5 text-on-surface-variant/60" />
+              <Box className="w-4 h-4 text-white" />
             )}
-            <span>
-              {downloadingFormat === 'glb' ? 'Downloading GLB...' : 'Download GLB'}
-            </span>
+            <div className="text-left">
+              <span className="block font-bold">
+                {exportingFormat === 'glb' ? 'Downloading GLB...' : 'Download GLB (Primary)'}
+              </span>
+              <span className="text-[10px] text-white/80 block font-normal -mt-0.5">
+                Standard WebGL & Three.js format
+              </span>
+            </div>
           </div>
           <span
-            className={`font-mono text-[10px] px-1.5 py-0.5 rounded ${
-              isGlbAvailable
-                ? 'bg-white/20 text-white'
-                : 'bg-surface-container text-on-surface-variant/60'
+            className={`font-mono text-[10px] px-2 py-0.5 rounded font-semibold ${
+              isAvailable ? 'bg-white/20 text-white' : 'bg-surface-container text-on-surface-variant/40'
             }`}
           >
-            Web / AR
+            Recommended
           </span>
         </button>
 
-        {/* OBJ + MTL - Kept disabled unless real OBJ URL is provided */}
-        <button
-          type="button"
-          disabled={!isObjAvailable}
-          onClick={() => handleDownload('obj')}
-          className={`w-full py-2.5 px-3 rounded-xl border font-semibold text-xs flex items-center justify-between transition-colors select-none ${
-            isObjAvailable
-              ? 'bg-surface-container-low hover:bg-surface-container border-surface-container-high text-main-text active:scale-[0.99] cursor-pointer'
-              : 'bg-surface-container-low/40 border-transparent text-on-surface-variant/40 cursor-not-allowed'
-          }`}
-          title={isObjAvailable ? 'Download OBJ + MTL format' : 'OBJ format is disabled until provided by backend'}
-        >
-          <div className="flex items-center gap-2">
-            {isObjAvailable ? (
-              <FolderArchive className="w-4 h-4" />
-            ) : (
-              <Lock className="w-3.5 h-3.5 text-on-surface-variant/50" />
-            )}
-            <span>
-              {downloadingFormat === 'obj' ? 'Archiving OBJ...' : 'Download OBJ + MTL'}
-            </span>
-          </div>
-          <span className="font-mono text-[10px] text-on-surface-variant">
-            Blender / Maya
+        {/* 3. Multi-Format Export Options */}
+        <div className="flex items-center justify-between pt-1">
+          <span className="font-mono text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">
+            Production Formats
           </span>
-        </button>
+          <span className="font-mono text-[10px] text-on-surface-variant/70">
+            {isAvailable ? 'Click format to export' : 'Locked'}
+          </span>
+        </div>
 
-        {/* USDZ Format - Disabled placeholder */}
-        <button
-          type="button"
-          disabled={true}
-          className="w-full py-2 px-3 rounded-xl border text-xs flex items-center justify-between transition-colors select-none bg-surface-container-low/40 border-transparent text-on-surface-variant/40 cursor-not-allowed"
-          title="USDZ format is disabled until provided by backend"
-        >
-          <span className="flex items-center gap-2 font-medium">
-            <Smartphone className="w-3.5 h-3.5" />
-            <span>USDZ (Apple Vision / iOS)</span>
-          </span>
-          <span className="font-mono text-[10px] text-on-surface-variant">QuickLook</span>
-        </button>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+          {EXPORT_FORMATS.map((fmt) => {
+            const Icon = fmt.icon
+            const isCurrentExporting = exportingFormat === fmt.id
+
+            return (
+              <button
+                key={fmt.id}
+                type="button"
+                disabled={!isAvailable || Boolean(exportingFormat)}
+                onClick={() => handleExport(fmt.id)}
+                className={`py-2 px-2.5 rounded-lg border text-left flex items-center justify-between transition-all select-none ${
+                  isAvailable
+                    ? 'bg-surface-container-low hover:bg-surface-container active:scale-[0.98] border-surface-container-high/80 text-main-text cursor-pointer hover:border-primary/40'
+                    : 'bg-surface-container-low/30 border-transparent text-on-surface-variant/40 cursor-not-allowed'
+                }`}
+                title={isAvailable ? `Export as ${fmt.label}` : 'Available after model generation'}
+              >
+                <div className="flex items-center gap-2 min-w-0">
+                  {isCurrentExporting ? (
+                    <Loader2 className="w-3.5 h-3.5 text-primary animate-spin shrink-0" />
+                  ) : (
+                    <Icon className={`w-3.5 h-3.5 shrink-0 ${isAvailable ? 'text-primary' : 'text-on-surface-variant/40'}`} />
+                  )}
+                  <div className="min-w-0">
+                    <span className="font-semibold text-[11px] block truncate leading-tight">
+                      {isCurrentExporting ? 'Exporting...' : fmt.label}
+                    </span>
+                    <span className="text-[9px] text-on-surface-variant block truncate">
+                      {fmt.desc}
+                    </span>
+                  </div>
+                </div>
+                <span className="font-mono text-[9px] text-on-surface-variant/70 shrink-0 ml-1">
+                  {fmt.badge}
+                </span>
+              </button>
+            )
+          })}
+        </div>
       </div>
 
-      {!isGlbAvailable && (
-        <p className="text-[10px] text-on-surface-variant bg-surface-container-low p-2 rounded-lg border border-surface-container-high/60 text-center font-medium">
-          Export buttons will unlock once a real model file is generated from the backend.
-        </p>
+      {/* Export Error Alert */}
+      {exportError && (
+        <div className="p-2 rounded-lg bg-red-50 border border-red-200 text-red-700 text-[11px] flex items-start gap-1.5 animate-fadeIn">
+          <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5 text-red-600" />
+          <span className="leading-tight break-words">{exportError}</span>
+        </div>
       )}
 
-      {/* Quick Action Links */}
+      {/* 4. Quick Action Links at the bottom */}
       <div className="flex items-center justify-between pt-2 border-t border-surface-container-low text-xs">
         <a
           href="#editor"
           onClick={(e) => {
             e.preventDefault()
-            alert('3D Editor integration will open when a real generated model is available.')
+            if (!isAvailable) {
+              alert('Generate a 3D model first to inspect in external tools.')
+              return
+            }
+            alert('Opening 3D model in WebGL inspector.')
           }}
-          className="text-primary hover:underline font-medium flex items-center gap-1"
+          className={`font-medium flex items-center gap-1 transition-colors ${
+            isAvailable ? 'text-primary hover:underline' : 'text-on-surface-variant/50 cursor-not-allowed'
+          }`}
         >
           <ExternalLink className="w-3 h-3" />
-          <span>Open in 3D Editor</span>
+          <span>Open Inspector</span>
         </a>
+
         <button
           type="button"
           onClick={handleCopyLink}
-          className="text-on-surface-variant hover:text-main-text flex items-center gap-1 transition-colors cursor-pointer"
+          className="text-on-surface-variant hover:text-main-text flex items-center gap-1 transition-colors cursor-pointer text-xs"
         >
           {copied ? (
             <>
@@ -176,7 +246,7 @@ export default function ExportPanel({
           ) : (
             <>
               <Copy className="w-3 h-3" />
-              <span>Copy Share Link</span>
+              <span>Copy Link</span>
             </>
           )}
         </button>

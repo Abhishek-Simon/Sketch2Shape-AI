@@ -1,7 +1,6 @@
 import React, { useState } from 'react'
 import Navbar from './components/Navbar'
 import Workspace from './components/Workspace'
-import Footer from './components/Footer'
 import { Box, Sparkles, Layers, Cpu, ArrowRight } from 'lucide-react'
 
 export default function App() {
@@ -121,8 +120,6 @@ export default function App() {
         )}
       </main>
 
-      {/* Footer */}
-      <Footer />
     </div>
   )
 }
