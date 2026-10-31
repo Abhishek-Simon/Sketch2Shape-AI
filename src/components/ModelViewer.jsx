@@ -9,13 +9,7 @@ import {
   Maximize2,
   ZoomIn,
   ZoomOut,
-  Hand,
-  Lightbulb,
-  ExternalLink,
-  Sliders,
-  Sun,
-  Layers,
-  Upload
+  Hand
 } from 'lucide-react'
 
 export default function ModelViewer({
@@ -509,7 +503,7 @@ export default function ModelViewer({
         </div>
 
         {/* Main 3D Dark Canvas Viewport */}
-        <div className="relative w-full h-[480px] lg:h-[520px] rounded-2xl overflow-hidden bg-viewport shadow-2xl select-none">
+        <div className="relative w-full h-[520px] lg:h-[580px] xl:h-[620px] rounded-2xl overflow-hidden bg-viewport shadow-2xl select-none">
           {/* Three.js Canvas Container */}
           <div ref={containerRef} className="w-full h-full cursor-grab active:cursor-grabbing" />
 
@@ -625,89 +619,6 @@ export default function ModelViewer({
             <Hand className="w-3.5 h-3.5 text-secondary" />
             <span>Drag to rotate • Scroll to zoom</span>
           </div>
-        </div>
-
-        {/* Helpful Bottom Status Banner */}
-        <div className="flex items-center justify-between p-3 rounded-xl bg-surface-container-low border border-surface-container-high/60">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center text-primary shadow-xs border border-surface-container-high">
-              <Lightbulb className="w-4 h-4" />
-            </div>
-            <div>
-              <p className="text-xs font-semibold text-main-text">
-                {isRealModel ? '3D Asset Rendered' : 'Sample 3D Preview Loaded'}
-              </p>
-              <p className="text-xs text-on-surface-variant">
-                {isRealModel
-                  ? 'Model mesh rendered via Three.js GLTFLoader. Ready for inspection and export.'
-                  : 'The viewport displays a sample scene. Generating a model will load the real reconstructed GLB asset.'}
-              </p>
-            </div>
-          </div>
-          <button
-            type="button"
-            className="hidden sm:flex items-center gap-1 px-3 py-1.5 rounded-lg bg-white hover:bg-surface-container border border-surface-container-high text-main-text text-xs font-medium shadow-xs transition-colors"
-          >
-            <span>View Docs</span>
-            <ExternalLink className="w-3 h-3 text-on-surface-variant" />
-          </button>
-        </div>
-      </div>
-
-      {/* Material Node & Decimation Strip */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <div className="bg-white p-3 px-4 rounded-xl border border-surface-container-high shadow-card flex items-center justify-between">
-          <div>
-            <span className="font-mono text-[10px] text-on-surface-variant block uppercase tracking-wider">
-              Topology
-            </span>
-            <span className="text-xs font-bold text-main-text">
-              Quad Topology
-            </span>
-          </div>
-          <button
-            type="button"
-            className="w-7 h-7 rounded-lg bg-surface-container-low hover:bg-surface-container border border-surface-container-high flex items-center justify-center text-main-text transition-colors"
-            title="Topology Mode"
-          >
-            <Sliders className="w-3.5 h-3.5" />
-          </button>
-        </div>
-
-        <div className="bg-white p-3 px-4 rounded-xl border border-surface-container-high shadow-card flex items-center justify-between">
-          <div>
-            <span className="font-mono text-[10px] text-on-surface-variant block uppercase tracking-wider">
-              Lighting Rig
-            </span>
-            <span className="text-xs font-bold text-main-text">
-              Studio Softbox
-            </span>
-          </div>
-          <button
-            type="button"
-            className="w-7 h-7 rounded-lg bg-surface-container-low hover:bg-surface-container border border-surface-container-high flex items-center justify-center text-main-text transition-colors"
-            title="Adjust Lighting"
-          >
-            <Sun className="w-3.5 h-3.5" />
-          </button>
-        </div>
-
-        <div className="bg-white p-3 px-4 rounded-xl border border-surface-container-high shadow-card flex items-center justify-between">
-          <div>
-            <span className="font-mono text-[10px] text-on-surface-variant block uppercase tracking-wider">
-              UV Unwrap
-            </span>
-            <span className="text-xs font-bold text-secondary">
-              Auto-Seam OK
-            </span>
-          </div>
-          <button
-            type="button"
-            className="w-7 h-7 rounded-lg bg-surface-container-low hover:bg-surface-container border border-surface-container-high flex items-center justify-center text-main-text transition-colors"
-            title="UV Unwrap Settings"
-          >
-            <Layers className="w-3.5 h-3.5" />
-          </button>
         </div>
       </div>
     </div>
