@@ -63,7 +63,7 @@ export default function PromptInput({
           id="prompt-field"
           value={prompt}
           onChange={(e) => onPromptChange(e.target.value)}
-          placeholder="Describe object materials, detailing, or aesthetic (optional)..."
+          placeholder="Describe your 3D model (optional)..."
           rows={2}
           className="w-full px-3 py-2 rounded-xl bg-surface-container-low border border-surface-container-high/80 text-main-text text-xs focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all resize-none placeholder:text-on-surface-variant/70"
         />

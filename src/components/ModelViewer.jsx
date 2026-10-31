@@ -9,7 +9,8 @@ import {
   Maximize2,
   ZoomIn,
   ZoomOut,
-  Hand
+  Hand,
+  Box
 } from 'lucide-react'
 
 export default function ModelViewer({
@@ -24,7 +25,6 @@ export default function ModelViewer({
   const rendererRef = useRef(null)
   const cameraRef = useRef(null)
   const rootGroupRef = useRef(null)
-  const sampleGroupRef = useRef(null)
   const loadedModelRef = useRef(null)
   const reqIdRef = useRef(null)
   const originalMaterialsMapRef = useRef(new Map())
@@ -35,78 +35,17 @@ export default function ModelViewer({
   const [isLoadingModel, setIsLoadingModel] = useState(false)
   const [loadError, setLoadError] = useState(null)
 
-  // Build the demo sample planet (clearly labeled as a sample preview, not a generated result)
-  const createSamplePlanetGroup = useCallback(() => {
-    const group = new THREE.Group()
-    group.name = 'sample_planet_group'
-
-    // Central Core Sphere / Body
-    const bodyGeom = new THREE.SphereGeometry(1.0, 36, 36)
-    const bodyMat = new THREE.MeshPhongMaterial({
-      color: 0x6655e8,
-      emissive: 0x1a1240,
-      specular: 0x8f85ff,
-      shininess: 90
-    })
-    const body = new THREE.Mesh(bodyGeom, bodyMat)
-    body.name = 'model_body'
-    group.add(body)
-
-    // Equatorial Ring
-    const ringGeom = new THREE.TorusGeometry(1.3, 0.08, 16, 64)
-    const ringMat = new THREE.MeshPhongMaterial({
-      color: 0x20b8a6,
-      emissive: 0x073630,
-      specular: 0x8afff0,
-      shininess: 120
-    })
-    const ring = new THREE.Mesh(ringGeom, ringMat)
-    ring.rotation.x = Math.PI / 2.3
-    ring.name = 'model_ring'
-    group.add(ring)
-
-    // Secondary Orbit Ring
-    const ring2Geom = new THREE.TorusGeometry(1.45, 0.04, 16, 64)
-    const ring2Mat = new THREE.MeshPhongMaterial({
-      color: 0xffffff,
-      opacity: 0.8,
-      transparent: true
-    })
-    const ring2 = new THREE.Mesh(ring2Geom, ring2Mat)
-    ring2.rotation.x = -Math.PI / 4
-    ring2.name = 'model_ring2'
-    group.add(ring2)
-
-    // Top Optic Cap
-    const capGeom = new THREE.CylinderGeometry(0.35, 0.45, 0.4, 24)
-    const capMat = new THREE.MeshPhongMaterial({ color: 0x252a3a, specular: 0xffffff, shininess: 100 })
-    const cap = new THREE.Mesh(capGeom, capMat)
-    cap.position.y = 1.05
-    cap.name = 'model_cap'
-    group.add(cap)
-
-    // Glowing Sensor Node
-    const eyeGeom = new THREE.SphereGeometry(0.25, 24, 24)
-    const eyeMat = new THREE.MeshBasicMaterial({ color: 0x20b8a6 })
-    const eye = new THREE.Mesh(eyeGeom, eyeMat)
-    eye.position.set(0, 0.35, 0.95)
-    eye.name = 'model_eye'
-    group.add(eye)
-
-    return group
-  }, [])
-
   // Initialize Three.js Scene and Viewer
   useEffect(() => {
     const container = containerRef.current
     if (!container) return
 
-    const width = container.clientWidth || 600
-    const height = container.clientHeight || 520
+    const width = container.clientWidth
+    const height = container.clientHeight
 
     // 1. Scene
     const scene = new THREE.Scene()
-    scene.background = new THREE.Color(0x171B2D)
+    scene.background = new THREE.Color(0x161923)
     sceneRef.current = scene
 
     // 2. Camera
@@ -115,61 +54,47 @@ export default function ModelViewer({
     camera.lookAt(0, 0, 0)
     cameraRef.current = camera
 
-    // 3. WebGL Renderer
+    // 3. Renderer
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
     renderer.setSize(width, height)
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2))
-    renderer.toneMapping = THREE.ACESFilmicToneMapping
-    renderer.toneMappingExposure = 1.2
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
     renderer.shadowMap.enabled = true
     renderer.shadowMap.type = THREE.PCFSoftShadowMap
-    container.innerHTML = ''
-    container.appendChild(renderer.domElement)
+    renderer.toneMapping = THREE.ACESFilmicToneMapping
+    renderer.toneMappingExposure = 1.2
     rendererRef.current = renderer
 
-    // 4. Studio Lighting
-    const ambientLight = new THREE.AmbientLight(0xdde3ff, 0.9)
+    // Mount to DOM
+    container.innerHTML = ''
+    container.appendChild(renderer.domElement)
+
+    // 4. Lighting Rig
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.7)
     scene.add(ambientLight)
 
-    const keyLight = new THREE.DirectionalLight(0xffffff, 2.2)
-    keyLight.position.set(5, 8, 5)
-    keyLight.castShadow = true
-    scene.add(keyLight)
+    const mainLight = new THREE.DirectionalLight(0xffffff, 1.4)
+    mainLight.position.set(5, 8, 5)
+    mainLight.castShadow = true
+    mainLight.shadow.mapSize.width = 1024
+    mainLight.shadow.mapSize.height = 1024
+    scene.add(mainLight)
 
-    const fillLight = new THREE.DirectionalLight(0x6655e8, 1.4)
-    fillLight.position.set(-5, -2, -3)
+    const hemiLight = new THREE.HemisphereLight(0x6655e8, 0x0f172a, 0.5)
+    scene.add(hemiLight)
+
+    const fillLight = new THREE.PointLight(0x20b8a6, 0.8, 15)
+    fillLight.position.set(-4, 2, -3)
     scene.add(fillLight)
 
-    const rimLight = new THREE.PointLight(0x20b8a6, 2.5, 10)
-    rimLight.position.set(0, 4, -4)
-    scene.add(rimLight)
-
-    // 5. Studio Grid Floor Helper
-    const gridHelper = new THREE.GridHelper(10, 20, 0x3d4668, 0x222842)
+    // 5. Ground Studio Grid
+    const gridHelper = new THREE.GridHelper(10, 20, 0x334155, 0x1e293b)
     gridHelper.position.y = -1.2
     scene.add(gridHelper)
 
-    // Pedestal Disc
-    const baseDiscGeom = new THREE.CylinderGeometry(1.5, 1.5, 0.04, 32)
-    const baseDiscMat = new THREE.MeshBasicMaterial({
-      color: 0x6655e8,
-      wireframe: true,
-      transparent: true,
-      opacity: 0.35
-    })
-    const baseDisc = new THREE.Mesh(baseDiscGeom, baseDiscMat)
-    baseDisc.position.y = -1.18
-    scene.add(baseDisc)
-
-    // 6. Root Transform Group
+    // 6. Root Transform Group (starts empty, model added only on generation)
     const rootGroup = new THREE.Group()
     scene.add(rootGroup)
     rootGroupRef.current = rootGroup
-
-    // Default Sample Group
-    const sampleGroup = createSamplePlanetGroup()
-    sampleGroupRef.current = sampleGroup
-    rootGroup.add(sampleGroup)
 
     // 7. Interactive Orbit / Drag Interaction
     let isDragging = false
@@ -223,15 +148,14 @@ export default function ModelViewer({
       reqIdRef.current = requestAnimationFrame(animate)
       const elapsedTime = clock.getElapsedTime()
 
-      if (!isDragging && rootGroupRef.current) {
-        rootGroupRef.current.rotation.y += 0.006
-        const ring2 = sampleGroupRef.current?.getObjectByName('model_ring2')
-        if (ring2) ring2.rotation.z += 0.012
-      }
-
-      // Subtle levitation
-      if (rootGroupRef.current) {
-        rootGroupRef.current.position.y = Math.sin(elapsedTime * 1.5) * 0.1
+      // Rotate and animate only when a real generated model is loaded
+      if (loadedModelRef.current && rootGroupRef.current) {
+        if (!isDragging) {
+          rootGroupRef.current.rotation.y += 0.005
+        }
+        rootGroupRef.current.position.y = Math.sin(elapsedTime * 1.5) * 0.08
+      } else if (rootGroupRef.current) {
+        rootGroupRef.current.position.y = 0
       }
 
       renderer.render(scene, camera)
@@ -248,9 +172,9 @@ export default function ModelViewer({
       domElement.removeEventListener('wheel', onWheel)
       renderer.dispose()
     }
-  }, [createSamplePlanetGroup])
+  }, [])
 
-  // Prepared GLTF/GLB Loader for real models
+  // GLTF/GLB Loader for real generated models
   const loadGLBModel = useCallback((url) => {
     if (!rootGroupRef.current) return
 
@@ -261,13 +185,10 @@ export default function ModelViewer({
     loader.load(
       url,
       (gltf) => {
-        // Remove sample group if present
-        if (sampleGroupRef.current) {
-          rootGroupRef.current.remove(sampleGroupRef.current)
-        }
-        // Remove existing loaded model if present
-        if (loadedModelRef.current) {
+        // Remove previous loaded model if present
+        if (loadedModelRef.current && rootGroupRef.current) {
           rootGroupRef.current.remove(loadedModelRef.current)
+          loadedModelRef.current = null
         }
 
         const model = gltf.scene
@@ -324,29 +245,25 @@ export default function ModelViewer({
     )
   }, [])
 
-  // React to modelUrl prop changes
+  // React to modelUrl prop changes: load when provided, clear completely when null
   useEffect(() => {
     if (modelUrl) {
       loadGLBModel(modelUrl)
     } else {
-      // Restore sample preview if modelUrl is null
       if (loadedModelRef.current && rootGroupRef.current) {
         rootGroupRef.current.remove(loadedModelRef.current)
         loadedModelRef.current = null
-      }
-      if (sampleGroupRef.current && rootGroupRef.current) {
-        rootGroupRef.current.add(sampleGroupRef.current)
       }
       setLoadedStats(null)
     }
   }, [modelUrl, loadGLBModel])
 
-  // Update Shading Modes (Wireframe, MatCap, Shaded)
+  // Update Shading Modes (Wireframe, MatCap, Shaded) on real model
   useEffect(() => {
-    if (!rootGroupRef.current) return
+    if (!loadedModelRef.current || !rootGroupRef.current) return
 
     rootGroupRef.current.traverse((child) => {
-      if (child.isMesh && child.name !== 'model_eye') {
+      if (child.isMesh) {
         if (shadingMode === 'wireframe') {
           if (Array.isArray(child.material)) {
             child.material.forEach((m) => (m.wireframe = true))
@@ -365,17 +282,16 @@ export default function ModelViewer({
           }
         } else {
           // Shaded / original textured
-          if (child.material) {
+          const originalMat = originalMaterialsMapRef.current.get(child)
+          if (originalMat) {
+            child.material = originalMat
+            if (Array.isArray(child.material)) {
+              child.material.forEach((m) => (m.wireframe = false))
+            } else {
+              child.material.wireframe = false
+            }
+          } else if (child.material) {
             child.material.wireframe = false
-          }
-          if (child.name === 'model_body') {
-            child.material.color?.set(0x6655e8)
-            child.material.emissive?.set(0x1a1240)
-          } else if (child.name === 'model_ring') {
-            child.material.color?.set(0x20b8a6)
-            child.material.emissive?.set(0x073630)
-          } else if (child.name === 'model_cap') {
-            child.material.color?.set(0x252a3a)
           }
         }
       }
@@ -413,12 +329,12 @@ export default function ModelViewer({
     }
   }
 
-  // Display metadata (clearly denoting sample preview vs real model)
+  // Display metadata
   const isRealModel = Boolean(modelUrl && loadedModelRef.current)
-  const displayTitle = modelName || (isRealModel ? 'Generated_Model.glb' : 'Sample 3D Preview')
-  const displayStatus = statusText || (isRealModel ? 'Generated Mesh' : 'Sample Scene')
-  const displayVerts = vertCount || loadedStats?.verts || '14,820 Verts'
-  const displayPolys = polyCount || loadedStats?.polys || '28,450 Polys'
+  const displayTitle = isRealModel ? (modelName || 'Generated_Model.glb') : '3D Viewport'
+  const displayStatus = isRealModel ? (statusText || 'Generated Mesh') : 'Standby'
+  const displayVerts = loadedStats?.verts || null
+  const displayPolys = loadedStats?.polys || null
 
   return (
     <div className="flex flex-col gap-4">
@@ -428,7 +344,9 @@ export default function ModelViewer({
         <div className="flex flex-wrap items-center justify-between gap-3 pb-1 border-b border-surface-container-low">
           {/* Asset Title & Meta */}
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-surface-container flex items-center justify-center text-primary">
+            <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
+              isRealModel ? 'bg-primary-light text-primary' : 'bg-surface-container text-on-surface-variant'
+            }`}>
               <Rotate3d className="w-4 h-4" />
             </div>
             <div>
@@ -436,14 +354,18 @@ export default function ModelViewer({
                 <h3 className="font-manrope text-sm font-bold text-main-text leading-tight">
                   {displayTitle}
                 </h3>
-                <span className="px-2 py-0.5 rounded-full bg-surface-container text-primary font-mono text-[10px] font-semibold">
+                <span className={`px-2 py-0.5 rounded-full font-mono text-[10px] font-semibold border ${
+                  isRealModel
+                    ? 'bg-secondary-light text-secondary border-secondary/20'
+                    : 'bg-surface-container text-on-surface-variant border-surface-container-high'
+                }`}>
                   {displayStatus}
                 </span>
               </div>
               <span className="font-mono text-[11px] text-on-surface-variant">
                 {isRealModel
                   ? 'Active 3D mesh loaded in Three.js viewport'
-                  : 'Interactive sample preview • Ready for generated GLB assets'}
+                  : 'Interactive 3D Viewport • Awaiting generated model'}
               </span>
             </div>
           </div>
@@ -495,9 +417,13 @@ export default function ModelViewer({
             </div>
 
             {/* Viewport Engine Status */}
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-secondary-light text-secondary-on-container font-mono text-xs font-semibold border border-secondary/20">
-              <span className="w-2 h-2 rounded-full bg-secondary animate-pulse" />
-              <span>{isRealModel ? 'GLB Active' : 'WebGL Active'}</span>
+            <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full font-mono text-xs font-semibold border ${
+              isRealModel
+                ? 'bg-secondary-light text-secondary-on-container border-secondary/20'
+                : 'bg-surface-container text-on-surface-variant border-surface-container-high'
+            }`}>
+              <span className={`w-2 h-2 rounded-full ${isRealModel ? 'bg-secondary animate-pulse' : 'bg-outline-variant'}`} />
+              <span>{isRealModel ? 'GLB Active' : 'Standby'}</span>
             </div>
           </div>
         </div>
@@ -506,6 +432,21 @@ export default function ModelViewer({
         <div className="relative w-full h-[520px] lg:h-[580px] xl:h-[620px] rounded-2xl overflow-hidden bg-viewport shadow-2xl select-none">
           {/* Three.js Canvas Container */}
           <div ref={containerRef} className="w-full h-full cursor-grab active:cursor-grabbing" />
+
+          {/* Empty Viewport Placeholder Overlay (shown when no model has been generated yet) */}
+          {!isRealModel && !isLoadingModel && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6 pointer-events-none select-none z-20">
+              <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-white/40 mb-3 shadow-inner">
+                <Box className="w-7 h-7 stroke-[1.5]" />
+              </div>
+              <p className="font-manrope text-sm font-semibold text-white/90">
+                Your 3D model will appear here after generation.
+              </p>
+              <p className="font-inter text-xs text-white/40 mt-1 max-w-sm">
+                Draw a sketch or upload an image on the left, then click Generate 3D Model.
+              </p>
+            </div>
+          )}
 
           {/* Loading Overlay */}
           {isLoadingModel && (
@@ -524,13 +465,13 @@ export default function ModelViewer({
             </div>
           )}
 
-          {/* Floating Top-Right: Camera Orientation Gizmo & Angles */}
+          {/* Floating Top-Right: Quick Orientation Gizmo & Angles */}
           <div className="absolute top-4 right-4 flex flex-col items-end gap-2 pointer-events-auto">
-            {/* Isometric Mini Gizmo Cube */}
-            <div 
-              onClick={resetView}
-              className="w-14 h-14 rounded-xl bg-viewport/85 backdrop-blur-md border border-white/10 p-1 flex flex-col items-center justify-center shadow-lg cursor-pointer hover:bg-viewport transition-colors"
-              title="Reset to Isometric View"
+            {/* View Cube / Orientation Badge */}
+            <div
+              onClick={() => setCameraAngle('persp')}
+              className="w-10 h-10 rounded-xl bg-viewport/85 backdrop-blur-md border border-white/10 shadow-lg flex flex-col items-center justify-center cursor-pointer hover:bg-viewport transition-colors"
+              title="Reset to Perspective View"
             >
               <div className="w-6 h-6 relative flex items-center justify-center">
                 <span className="text-[8px] font-mono text-secondary absolute -top-1 font-bold">Y+</span>
@@ -596,23 +537,25 @@ export default function ModelViewer({
             </button>
           </div>
 
-          {/* Floating Bottom-Left: Mesh Topology Badge */}
-          <div className="absolute bottom-4 left-4 flex items-center gap-2 pointer-events-auto">
-            <div className="px-3 py-1.5 rounded-xl bg-viewport/90 backdrop-blur-md border border-white/10 shadow-lg flex items-center gap-2.5 font-mono text-[11px] text-white">
-              <div className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-secondary" />
-                <span className="font-medium">{displayVerts}</span>
+          {/* Floating Bottom-Left: Real Mesh Topology Badge (shown only when model is loaded) */}
+          {isRealModel && displayVerts && (
+            <div className="absolute bottom-4 left-4 flex items-center gap-2 pointer-events-auto">
+              <div className="px-3 py-1.5 rounded-xl bg-viewport/90 backdrop-blur-md border border-white/10 shadow-lg flex items-center gap-2.5 font-mono text-[11px] text-white">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-secondary" />
+                  <span className="font-medium">{displayVerts}</span>
+                </div>
+                <span className="text-white/30">|</span>
+                <div className="flex items-center gap-1.5">
+                  <span className="font-medium">{displayPolys}</span>
+                </div>
+                <span className="text-white/30">|</span>
+                <span className="text-secondary font-medium uppercase text-[10px]">
+                  {shadingMode === 'wireframe' ? 'Wireframe' : 'PBR Metallic'}
+                </span>
               </div>
-              <span className="text-white/30">|</span>
-              <div className="flex items-center gap-1.5">
-                <span className="font-medium">{displayPolys}</span>
-              </div>
-              <span className="text-white/30">|</span>
-              <span className="text-secondary font-medium uppercase text-[10px]">
-                {shadingMode === 'wireframe' ? 'Wireframe' : 'PBR Metallic'}
-              </span>
             </div>
-          </div>
+          )}
 
           {/* Floating Bottom-Right: Navigation Instruction Tooltip */}
           <div className="hidden sm:flex absolute bottom-4 right-4 px-3 py-1.5 rounded-xl bg-viewport/90 backdrop-blur-md border border-white/10 shadow-lg text-white/60 font-inter text-[11px] items-center gap-2 pointer-events-none">

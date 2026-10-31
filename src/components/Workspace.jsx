@@ -21,9 +21,7 @@ export default function Workspace() {
   const [inputMode, setInputMode] = useState('draw') // 'draw' | 'upload'
   const [sketchImage, setSketchImage] = useState(null)
   const [uploadedImage, setUploadedImage] = useState(null)
-  const [prompt, setPrompt] = useState(
-    'Futuristic robotic drone with metallic violet shell, teal sensor ring, and ceramic camera lens'
-  )
+  const [prompt, setPrompt] = useState('')
   const [validationError, setValidationError] = useState(null)
   const [isGenerating, setIsGenerating] = useState(false)
   const [jobId, setJobId] = useState(null)
@@ -242,9 +240,9 @@ export default function Workspace() {
             modelName={
               isModelReady
                 ? `model_${jobId ? jobId.slice(0, 8) : 'asset'}.glb`
-                : 'Sample 3D Preview'
+                : null
             }
-            statusText={isModelReady ? 'Generated Mesh' : 'Sample Scene'}
+            statusText={isModelReady ? 'Generated Mesh' : null}
           />
         </section>
 
