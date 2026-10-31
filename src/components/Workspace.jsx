@@ -1,14 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react'
 import {
-  ChevronRight,
-  History,
-  Share2,
-  Wand2,
   Pencil,
-  UploadCloud,
-  Headphones,
-  Armchair,
-  FlaskConical
+  UploadCloud
 } from 'lucide-react'
 
 import SketchCanvas from './SketchCanvas'
@@ -95,18 +88,6 @@ export default function Workspace() {
     [stopPolling]
   )
 
-  // Handle starter template selection
-  const handleSelectTemplate = (templateName) => {
-    setValidationError(null)
-    if (templateName === 'Mech Helmet') {
-      setPrompt('Tactical mecha cyber-helmet with neon cyan visor and carbon fiber plating')
-    } else if (templateName === 'Ergo Armchair') {
-      setPrompt('Minimalist ergonomic lounge armchair with sculpted birch wood and soft wool fabric')
-    } else if (templateName === 'Flask Asset') {
-      setPrompt('Sci-fi alchemical energy flask containing swirling azure plasma liquid')
-    }
-  }
-
   // Handle generation trigger with validation
   const handleGenerate = async () => {
     // Prevent duplicate submissions while request is active
@@ -164,11 +145,6 @@ export default function Workspace() {
     }
   }
 
-  // Active preview image for metadata inspection
-  const currentPreview = inputMode === 'upload' && uploadedImage
-    ? uploadedImage.dataUrl
-    : sketchImage
-
   // Memoized handlers for canvas and upload components
   const handleSketchChange = useCallback((img) => {
     setSketchImage(img)
@@ -181,78 +157,11 @@ export default function Workspace() {
   }, [])
 
   return (
-    <div className="w-full px-3 sm:px-5 lg:px-8 py-4 sm:py-6 max-w-[1680px] mx-auto">
-      {/* Top Studio Context Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 bg-white p-3 px-4 rounded-xl border border-surface-container-high shadow-card">
-        {/* Left: Session Breadcrumbs */}
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1.5 text-on-surface-variant text-xs">
-            <span>Workspaces</span>
-            <ChevronRight className="w-3.5 h-3.5" />
-            <span className="text-main-text font-semibold">
-              {jobId ? `Job #${jobId.slice(0, 8)}` : 'Generative Session #084'}
-            </span>
-          </div>
-
-          <span className="hidden md:inline-block w-1 h-1 rounded-full bg-outline-variant" />
-
-          {/* Dynamic pipeline status badge */}
-          <div className="hidden md:flex items-center gap-1.5 text-secondary text-xs font-semibold bg-secondary-light px-2.5 py-0.5 rounded-full border border-secondary/20">
-            <span
-              className={`w-1.5 h-1.5 rounded-full ${
-                isGenerating
-                  ? 'bg-primary animate-ping'
-                  : jobStatus === 'completed'
-                  ? 'bg-secondary'
-                  : jobStatus === 'failed'
-                  ? 'bg-red-500'
-                  : 'bg-secondary'
-              }`}
-            />
-            <span className="capitalize">
-              {isGenerating
-                ? jobStatus === 'queued'
-                  ? 'Job Queued'
-                  : 'Processing Pipeline...'
-                : jobStatus === 'completed'
-                ? 'Model Ready'
-                : 'Pipeline Standby'}
-            </span>
-          </div>
-        </div>
-
-        {/* Right: Studio Quick Actions */}
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface-container-low hover:bg-surface-container border border-surface-container-high text-on-surface-variant text-xs font-medium transition-colors"
-          >
-            <History className="w-3.5 h-3.5" />
-            <span>Version 2.4</span>
-          </button>
-          <button
-            type="button"
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface-container-low hover:bg-surface-container border border-surface-container-high text-on-surface-variant text-xs font-medium transition-colors"
-          >
-            <Share2 className="w-3.5 h-3.5" />
-            <span>Collaborate</span>
-          </button>
-          <button
-            type="button"
-            onClick={handleGenerate}
-            disabled={isGenerating}
-            className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-primary hover:bg-primary-hover text-white text-xs font-semibold shadow-xs transition-opacity disabled:opacity-60 cursor-pointer"
-          >
-            <Wand2 className="w-3.5 h-3.5" />
-            <span>{isGenerating ? 'Synthesizing...' : 'Quick Bake'}</span>
-          </button>
-        </div>
-      </div>
-
+    <div className="w-full px-3 sm:px-5 lg:px-8 py-4 sm:py-6 max-w-[1720px] mx-auto">
       {/* 3-Column Studio Grid Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
         {/* ================= LEFT COLUMN: SKETCH INPUT ================= */}
-        <section className="lg:col-span-3 flex flex-col gap-4">
+        <section className="lg:col-span-3 xl:col-span-3 flex flex-col gap-4">
           <div className="bg-white p-4 rounded-xl border border-surface-container-high shadow-card flex flex-col gap-4">
             {/* Heading */}
             <div>
@@ -324,63 +233,10 @@ export default function Workspace() {
               validationError={validationError}
             />
           </div>
-
-          {/* Starter Sketch Templates Card */}
-          <div className="bg-white p-4 rounded-xl border border-surface-container-high shadow-card flex flex-col gap-2.5">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-main-text">
-                Starter Sketch Templates
-              </span>
-              <span className="font-mono text-[10px] text-primary hover:underline cursor-pointer">
-                Explore All
-              </span>
-            </div>
-
-            <div className="grid grid-cols-3 gap-2">
-              <div
-                onClick={() => handleSelectTemplate('Mech Helmet')}
-                className="group rounded-lg overflow-hidden bg-surface-container-low border border-surface-container-high/60 hover:border-primary/40 p-2 text-center hover:bg-surface-container transition-all cursor-pointer"
-                title="Use Mech Helmet prompt & style"
-              >
-                <div className="w-full h-10 rounded bg-white flex items-center justify-center text-on-surface-variant group-hover:text-primary transition-colors">
-                  <Headphones className="w-4 h-4" />
-                </div>
-                <span className="font-mono text-[10px] text-main-text mt-1.5 block truncate font-medium">
-                  Mech Helmet
-                </span>
-              </div>
-
-              <div
-                onClick={() => handleSelectTemplate('Ergo Armchair')}
-                className="group rounded-lg overflow-hidden bg-surface-container-low border border-surface-container-high/60 hover:border-primary/40 p-2 text-center hover:bg-surface-container transition-all cursor-pointer"
-                title="Use Ergo Armchair prompt & style"
-              >
-                <div className="w-full h-10 rounded bg-white flex items-center justify-center text-on-surface-variant group-hover:text-primary transition-colors">
-                  <Armchair className="w-4 h-4" />
-                </div>
-                <span className="font-mono text-[10px] text-main-text mt-1.5 block truncate font-medium">
-                  Ergo Armchair
-                </span>
-              </div>
-
-              <div
-                onClick={() => handleSelectTemplate('Flask Asset')}
-                className="group rounded-lg overflow-hidden bg-surface-container-low border border-surface-container-high/60 hover:border-primary/40 p-2 text-center hover:bg-surface-container transition-all cursor-pointer"
-                title="Use Flask Asset prompt & style"
-              >
-                <div className="w-full h-10 rounded bg-white flex items-center justify-center text-on-surface-variant group-hover:text-primary transition-colors">
-                  <FlaskConical className="w-4 h-4" />
-                </div>
-                <span className="font-mono text-[10px] text-main-text mt-1.5 block truncate font-medium">
-                  Flask Asset
-                </span>
-              </div>
-            </div>
-          </div>
         </section>
 
         {/* ================= CENTER COLUMN: 3D PREVIEW ================= */}
-        <section className="lg:col-span-6 flex flex-col gap-4">
+        <section className="lg:col-span-6 xl:col-span-6 flex flex-col gap-4">
           <ModelViewer
             modelUrl={modelUrl}
             modelName={
@@ -393,26 +249,14 @@ export default function Workspace() {
         </section>
 
         {/* ================= RIGHT COLUMN: GENERATION STATUS & EXPORT ================= */}
-        <section className="lg:col-span-3 flex flex-col gap-4">
+        <section className="lg:col-span-3 xl:col-span-3 flex flex-col gap-4">
           <GenerationStatus
             jobStatus={jobStatus}
             jobId={jobId}
             errorMessage={validationError}
             isGenerating={isGenerating}
             isModelReady={isModelReady}
-            previewImage={currentPreview}
-            promptText={prompt}
-            inputName={
-              inputMode === 'draw'
-                ? (sketchImage ? 'canvas_sketch.png' : null)
-                : uploadedImage?.name
-            }
-            inputDimensions={
-              inputMode === 'draw'
-                ? (sketchImage ? 'HTML Canvas Sketch' : null)
-                : (uploadedImage?.width && uploadedImage?.height ? `${uploadedImage.width} × ${uploadedImage.height} px` : null)
-            }
-            inputMode={inputMode}
+            onRetry={handleGenerate}
           />
           <ExportPanel
             isModelAvailable={isModelReady}
